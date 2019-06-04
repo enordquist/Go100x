@@ -60,4 +60,7 @@ static void calculate(const Grid&);
 namespace gpu
 {
 __global__ static void calculate(int size, int* indices);
+    
+__global__ static void fillNeighbors(std::vector<floats> x_arr, std::vector<floats> y_arr, std::vector<floats> z_arr);
+
 }
