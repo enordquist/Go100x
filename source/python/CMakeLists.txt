@@ -44,7 +44,11 @@ FILE(WRITE ${CMAKE_BINARY_DIR}/go100x/__init__.py
 from __future__ import absolute_import
 import ctypes
 from ctypes.util import find_library
-lib = ctypes.CDLL('libGo100x.so', mode=ctypes.RTLD_GLOBAL)
+import os
+
+this_path = os.path.abspath(os.path.dirname(__file__))
+libpath = os.path.join(this_path, 'libGo100x.so')
+lib = ctypes.CDLL(libpath, mode=ctypes.RTLD_GLOBAL)
 from go100x.go100x import *
 ")
 
