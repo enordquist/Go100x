@@ -22,10 +22,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
+#if !defined(DEBUG)
+#define DEBUG
+#endif
 
 #include "go100x.hpp"
 #include "Go100x/kernels.hpp"
 #include <pybind11/pybind11.h>
+
+#include "Go100x/macros.hpp"
 
 using namespace tim::component;
 
@@ -39,6 +44,7 @@ using cuda_tuple_t =
 //======================================================================================//
 //  Python wrappers
 //======================================================================================//
+
 
 PYBIND11_MODULE(go100x, gox)
 {
@@ -78,11 +84,32 @@ PYBIND11_MODULE(go100x, gox)
         const float* fmatrix_a = matrix_a.data();
         const float* fmatrix_b = matrix_b.data();
         // time the execution on the GPU
+        float *fmatrix_a_d, *fmatrix_b_d, *output_d;
+        int size = matrix_a.size();
+        cudaSetDevice(0);
+        CUDA_CHECK_CALL( cudaMalloc(&fmatrix_a_d, size*sizeof(float)) );
+        CUDA_CHECK_CALL( cudaMalloc(&fmatrix_b_d, size*sizeof(float)) );
+        CUDA_CHECK_CALL( cudaMalloc(&output_d, size*sizeof(float)) );
+
+        CUDA_CHECK_CALL( cudaMemcpy(fmatrix_a_d, fmatrix_a, size*sizeof(float), cudaMemcpyHostToDevice) );
+        CUDA_CHECK_CALL( cudaMemcpy(fmatrix_b_d, fmatrix_b, size*sizeof(float), cudaMemcpyHostToDevice) );
+
+  
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(cuda_tuple_t, "[GPU<<<", block, ", ", grid, ">>>]");
-            gpu_calculate(block, grid, fmatrix_a, fmatrix_b, result.mutable_data(),
+            CUDA_CHECK_LAST_ERROR();
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[GPU<<<", block, ", ", grid, ">>>]");
+            gpu_calculate(block, grid, fmatrix_a_d, fmatrix_b_d, output_d,
                           matrix_a.size());
+            CUDA_CHECK_LAST_ERROR();
+            CUDA_CHECK_CALL( cudaDeviceSynchronize() );
         }
+
+
+        CUDA_CHECK_CALL( cudaFree(fmatrix_a_d) );
+        CUDA_CHECK_CALL( cudaFree(fmatrix_b_d) );
+        CUDA_CHECK_CALL( cudaMemcpy(result.mutable_data(), output_d, size*sizeof(float), cudaMemcpyDeviceToHost) );
+        CUDA_CHECK_CALL( cudaFree(output_d) );
+
         return result;
     };
 

@@ -96,7 +96,7 @@ inline uintmax_t GetThisThreadID()
 
 //======================================================================================//
 
-#if defined(__NVCC__)
+//#if defined(__NVCC__)
 
 //--------------------------------------------------------------------------------------//
 // this is always defined, even in release mode
@@ -172,6 +172,6 @@ inline uintmax_t GetThisThreadID()
 #        endif
 #    endif
 
-#endif  // NVCC
+// #endif  // NVCC
 
 //======================================================================================//
