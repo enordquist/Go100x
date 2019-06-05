@@ -24,6 +24,7 @@
 //
 
 #include "go100x.hpp"
+#include "Go100x/kernels.hpp"
 #include <pybind11/pybind11.h>
 
 //======================================================================================//
@@ -35,4 +36,35 @@ PYBIND11_MODULE(go100x, gox)
     //----------------------------------------------------------------------------------//
     using gox::string_t;
     py::add_ostream_redirect(gox, "ostream_redirect");
+
+    auto launch_cpu_calculate = [](int block, int grid, farray_t matrix_a,
+                                   farray_t matrix_b) {
+        if(matrix_a.size() != matrix_b.size())
+        {
+            std::cerr << "Error! matrix A size does not match matrix B size: "
+                      << matrix_a.size() << " vs. " << matrix_b.size() << std::endl;
+            throw std::runtime_error("Matrix input error");
+        }
+
+        float* fmatrix_a = matrix_a.mutable_data();
+        float* fmatrix_b = matrix_b.mutable_data();
+        cpu_calculate(block, grid, fmatrix_a, fmatrix_b, matrix_a.size());
+    };
+
+    auto launch_gpu_calculate = [](int block, int grid, farray_t matrix_a,
+                                   farray_t matrix_b) {
+        if(matrix_a.size() != matrix_b.size())
+        {
+            std::cerr << "Error! matrix A size does not match matrix B size: "
+                      << matrix_a.size() << " vs. " << matrix_b.size() << std::endl;
+            throw std::runtime_error("Matrix input error");
+        }
+
+        float* fmatrix_a = matrix_a.mutable_data();
+        float* fmatrix_b = matrix_b.mutable_data();
+        gpu_calculate(block, grid, fmatrix_a, fmatrix_b, matrix_a.size());
+    };
+
+    gox.def("calculate_cpu", launch_cpu_calculate, "launch the calculation on cpu");
+    gox.def("calculate_cpu", launch_gpu_calculate, "launch the calculation on gpu");
 }

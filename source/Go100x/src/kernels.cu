@@ -5,14 +5,15 @@
 // dummy cuda kernel
 //
 __global__
-void gpu::calculate(int size, int* indices)
+void calculateKernel(float* matrix_a, float* matrix_b, int size)
 {
-    int i0      = blockIdx.x * blockDim.x + threadIdx.x;
-	int istride = blockDim.x * gridDim.x;
 
-	for(int i = i0; i < size; i += istride)
-	{
-		// ...
-		printf("index[%i] = %i\n", i, indices[i]);
-	}
+}
+
+//======================================================================================//
+// launch the kernel
+//
+void gpu_calculate(int block, int ngrid, float* matrix_a, float* matrix_b, int size)
+{
+    calculateKernel<<<ngrid, block>>>(matrix_a, matrix_b, size);
 }

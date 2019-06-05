@@ -53,6 +53,7 @@ target_include_directories(Go100x-submodules INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/PTL/source)
 
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 #----------------------------------------------------------------------------------------#
 # Project code
 #

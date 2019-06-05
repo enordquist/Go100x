@@ -54,11 +54,15 @@
 
 #include "timemory/timemory.hpp"
 
+#include "Go100x/kernels.hpp"
+#include "Go100x/macros.hpp"
+#include "Go100x/profiler.hpp"
+
 namespace py = pybind11;
-using namespace std::placeholders; 
+using namespace std::placeholders;
 using namespace py::literals;
 
-using farray_t = py::array_t<double, py::array::c_style | py::array::forcecast>;
+using farray_t = py::array_t<float, py::array::c_style | py::array::forcecast>;
 
 //======================================================================================//
 

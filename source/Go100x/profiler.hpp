@@ -45,24 +45,4 @@
 
 #include <cstddef>
 #include <cstring>
-
-#ifdef USE_TIMEMORY
-#    include <timemory/timemory.hpp>
-#else
-#    define TIMEMORY_AUTO_TIMER(...)                                                     \
-        {}
-#    define TIMEMORY_BASIC_AUTO_TIMER(...)                                               \
-        {}
-
-#    define TIMEMORY_AUTO_TUPLE(...)                                                     \
-        {}
-#    define TIMEMORY_BASIC_AUTO_TUPLE(...)                                               \
-        {}
-
-namespace tim
-{
-inline void enable_signal_detection() {}
-inline void disable_signal_detection() {}
-}
-
-#endif
+#include <timemory/timemory.hpp>
