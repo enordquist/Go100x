@@ -9,11 +9,11 @@
 //======================================================================================//
 // dummy cpu function that launches calcuations
 //
-extern void cpu_calculate(int block, int ngrid, float* matrix_a, float* matrix_b,
+extern void cpu_calculate(const float* input_a, const float* input_b, float* output,
                           int size);
 
 //======================================================================================//
 // dummy cuda kernel
 //
-extern void gpu_calculate(int block, int ngrid, float* matrix_a, float* matrix_b,
-                          int size);
+extern void gpu_calculate(int block, int ngrid, const float* input_a,
+                          const float* input_b, float* output, int size);

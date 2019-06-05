@@ -9,7 +9,7 @@ CREATE_LIBRARY(
     HEADERS                 ${headers}
     SOURCES                 ${sources}
     INCLUDE_DIRECTORIES     ${CMAKE_CURRENT_LIST_DIR}
-    LINK_LIBRARIES          Go100x-compile-options Go100x-submodules Go100x-cuda Go100x-gperf
+    LINK_LIBRARIES          Go100x-compile-options Go100x-submodules Go100x-cuda Go100x-gperf timemory-headers timemory-cuda
 )
 set_target_properties(Go100x-library PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/go100x

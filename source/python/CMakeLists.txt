@@ -24,12 +24,15 @@ add_library(Go100x-python MODULE
     ${CMAKE_CURRENT_LIST_DIR}/go100x.hpp
 )
 add_dependencies(Go100x-python Go100x-library)
-target_link_libraries(Go100x-python PUBLIC Go100x-library Go100x-cuda Go100x-submodules Go100x-compile-options)
+target_link_libraries(Go100x-python PRIVATE 
+    Go100x-library Go100x-cuda Go100x-submodules Go100x-compile-options
+    timemory-headers timemory-cuda)
 target_link_libraries(Go100x-python PRIVATE pybind11::module)
 target_include_directories(Go100x-python PRIVATE ${CMAKE_CURRENT_LIST_DIR}
     ${PROJECT_SOURCE_DIR}/source)
 target_include_directories(Go100x-python SYSTEM PRIVATE
-    ${PROJECT_SOURCE_DIR}/source/TiMemory/source/python/pybind11/include)
+    ${PROJECT_SOURCE_DIR}/source/TiMemory/source/python/pybind11/include
+    ${PROJECT_SOURCE_DIR}/source/TiMemory/source/cereal/include)
 
 set_target_properties(Go100x-python PROPERTIES
     OUTPUT_NAME go100x

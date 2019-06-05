@@ -14,6 +14,7 @@ set(TIMEMORY_BUILD_C OFF CACHE BOOL "Build TiMemory C interface" FORCE)
 set(TIMEMORY_BUILD_PYTHON ON CACHE BOOL "Build TiMemory Python interface")
 set(TIMEMORY_USE_MPI OFF CACHE BOOL "Build TiMemory with MPI support" FORCE)
 set(TIMEMORY_USE_CUPTI OFF CACHE BOOL "Build TiMemory with CUPTI support" FORCE)
+set(TIMEMORY_USE_CUDA ON CACHE BOOL "Build TiMemory with CUDA support" FORCE)
 
 if(USE_ARCH)
     set(PTL_USE_AVX512 ${USE_AVX512} CACHE BOOL "" FORCE)
@@ -46,7 +47,7 @@ add_subdirectory(TiMemory)
 # Submodule interface library
 #
 target_link_libraries(Go100x-submodules INTERFACE
-    ptl-shared timemory-cxx-shared timemory-cupti-shared timemory-cuda)
+    ptl-shared timemory-cxx-shared timemory-headers timemory-cuda ${CUDA_CUDART_LIBRARY})
 
 target_include_directories(Go100x-submodules INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}

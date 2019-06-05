@@ -27,6 +27,15 @@
 #include "Go100x/kernels.hpp"
 #include <pybind11/pybind11.h>
 
+using namespace tim::component;
+
+using auto_tuple_t =
+    tim::auto_tuple<real_clock, system_clock, user_clock, cpu_clock, cpu_util>;
+
+// unlike most components, "cuda_event" does not support nesting
+using cuda_tuple_t =
+    tim::auto_tuple<real_clock, system_clock, user_clock, cpu_clock, cuda_event>;
+
 //======================================================================================//
 //  Python wrappers
 //======================================================================================//
@@ -37,8 +46,7 @@ PYBIND11_MODULE(go100x, gox)
     using gox::string_t;
     py::add_ostream_redirect(gox, "ostream_redirect");
 
-    auto launch_cpu_calculate = [](int block, int grid, farray_t matrix_a,
-                                   farray_t matrix_b) {
+    auto launch_cpu_calculate = [](farray_t matrix_a, farray_t matrix_b) {
         if(matrix_a.size() != matrix_b.size())
         {
             std::cerr << "Error! matrix A size does not match matrix B size: "
@@ -46,9 +54,13 @@ PYBIND11_MODULE(go100x, gox)
             throw std::runtime_error("Matrix input error");
         }
 
-        float* fmatrix_a = matrix_a.mutable_data();
-        float* fmatrix_b = matrix_b.mutable_data();
-        cpu_calculate(block, grid, fmatrix_a, fmatrix_b, matrix_a.size());
+        auto         result    = farray_t(matrix_a.size());
+        const float* fmatrix_a = matrix_a.data();
+        const float* fmatrix_b = matrix_b.data();
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[CPU]");
+        // time the execution on the CPU
+        cpu_calculate(fmatrix_a, fmatrix_b, result.mutable_data(), matrix_a.size());
+        return result;
     };
 
     auto launch_gpu_calculate = [](int block, int grid, farray_t matrix_a,
@@ -60,9 +72,15 @@ PYBIND11_MODULE(go100x, gox)
             throw std::runtime_error("Matrix input error");
         }
 
-        float* fmatrix_a = matrix_a.mutable_data();
-        float* fmatrix_b = matrix_b.mutable_data();
-        gpu_calculate(block, grid, fmatrix_a, fmatrix_b, matrix_a.size());
+        int          size      = matrix_a.size();
+        auto         result    = farray_t(size);
+        const float* fmatrix_a = matrix_a.data();
+        const float* fmatrix_b = matrix_b.data();
+        float*       fmatrix_o = result.mutable_data();
+        // time the execution on the GPU
+        TIMEMORY_BASIC_AUTO_TUPLE(cuda_tuple_t, "[GPU<<<", block, ", ", grid, ">>>]");
+        gpu_calculate(block, grid, fmatrix_a, fmatrix_b, fmatrix_o, size);
+        return result;
     };
 
     gox.def("calculate_cpu", launch_cpu_calculate, "launch the calculation on cpu");
