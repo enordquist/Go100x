@@ -65,7 +65,7 @@ PYBIND11_MODULE(go100x, gox)
         const float* fmatrix_b = matrix_b.data();
         // time the execution on the CPU
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[CPU]");
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[CPU<<<", 0, ",", 0, ">>>]");
             cpu_calculate(fmatrix_a, fmatrix_b, result.mutable_data(), matrix_a.size());
         }
         return result;
@@ -97,7 +97,7 @@ PYBIND11_MODULE(go100x, gox)
   
         {
             CUDA_CHECK_LAST_ERROR();
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[GPU<<<", block, ", ", grid, ">>>]");
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[GPU<<<", grid, ",", block, ">>>]");
             gpu_calculate(block, grid, fmatrix_a_d, fmatrix_b_d, output_d,
                           matrix_a.size());
             CUDA_CHECK_LAST_ERROR();
