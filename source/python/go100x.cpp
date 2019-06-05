@@ -57,9 +57,11 @@ PYBIND11_MODULE(go100x, gox)
         auto         result    = farray_t(matrix_a.size());
         const float* fmatrix_a = matrix_a.data();
         const float* fmatrix_b = matrix_b.data();
-        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[CPU]");
         // time the execution on the CPU
-        cpu_calculate(fmatrix_a, fmatrix_b, result.mutable_data(), matrix_a.size());
+        {
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[CPU]");
+            cpu_calculate(fmatrix_a, fmatrix_b, result.mutable_data(), matrix_a.size());
+        }
         return result;
     };
 
@@ -72,17 +74,18 @@ PYBIND11_MODULE(go100x, gox)
             throw std::runtime_error("Matrix input error");
         }
 
-        int          size      = matrix_a.size();
-        auto         result    = farray_t(size);
+        auto         result    = farray_t(matrix_a.size());
         const float* fmatrix_a = matrix_a.data();
         const float* fmatrix_b = matrix_b.data();
-        float*       fmatrix_o = result.mutable_data();
         // time the execution on the GPU
-        TIMEMORY_BASIC_AUTO_TUPLE(cuda_tuple_t, "[GPU<<<", block, ", ", grid, ">>>]");
-        gpu_calculate(block, grid, fmatrix_a, fmatrix_b, fmatrix_o, size);
+        {
+            TIMEMORY_BASIC_AUTO_TUPLE(cuda_tuple_t, "[GPU<<<", block, ", ", grid, ">>>]");
+            gpu_calculate(block, grid, fmatrix_a, fmatrix_b, result.mutable_data(),
+                          matrix_a.size());
+        }
         return result;
     };
 
     gox.def("calculate_cpu", launch_cpu_calculate, "launch the calculation on cpu");
-    gox.def("calculate_cpu", launch_gpu_calculate, "launch the calculation on gpu");
+    gox.def("calculate_gpu", launch_gpu_calculate, "launch the calculation on gpu");
 }
