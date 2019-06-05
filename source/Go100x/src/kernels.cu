@@ -5,7 +5,7 @@
 // dummy cuda kernel
 //
 __global__
-void calculateKernel(float* matrix_a, float* matrix_b, int size)
+void calculateKernel(const float* input_a, const float* input_b, float* output, int size)
 {
 
 }
@@ -13,7 +13,8 @@ void calculateKernel(float* matrix_a, float* matrix_b, int size)
 //======================================================================================//
 // launch the kernel
 //
-void gpu_calculate(int block, int ngrid, float* matrix_a, float* matrix_b, int size)
+void gpu_calculate(int block, int ngrid, const float* input_a, const float* input_b,
+                   float* output, int size)
 {
-    calculateKernel<<<ngrid, block>>>(matrix_a, matrix_b, size);
+    calculateKernel<<<ngrid, block>>>(input_a, input_b, output, size);
 }

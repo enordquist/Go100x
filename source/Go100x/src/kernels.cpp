@@ -4,4 +4,4 @@
 //======================================================================================//
 // calculate on the CPU
 //
-void cpu_calculate(int block, int ngrid, float* matrix_a, float* matrix_b, int size) {}
+void cpu_calculate(const float* input_a, const float* input_b, float* output, int size) {}
