@@ -70,6 +70,20 @@ PYBIND11_MODULE(go100x, gox)
         }
         return result;
     };
+    
+    auto launch_fun_calculate = [](farray_t R, farray_t r, int J) {
+
+        const int     N = R.size();
+        auto         fD = farray_t(N);
+        const float* fR = R.data();
+        const float* fr = r.data();
+        // time the execution on the CPU
+        {
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[CPU]");
+            cpu_fun(fR, fr, fD.mutable_data(), J, N);
+        }
+        return fD;
+    };
 
     auto launch_gpu_calculate = [](int block, int grid, farray_t matrix_a,
                                    farray_t matrix_b) {
@@ -115,4 +129,5 @@ PYBIND11_MODULE(go100x, gox)
 
     gox.def("calculate_cpu", launch_cpu_calculate, "launch the calculation on cpu");
     gox.def("calculate_gpu", launch_gpu_calculate, "launch the calculation on gpu");
+    gox.def("calculate_fun", launch_fun_calculate, "launch the calculation on cpu, too");
 }
