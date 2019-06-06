@@ -22,3 +22,10 @@ extern void cpu_fun(const float* R, const float* r, float* D,
 //
 extern void gpu_calculate(int block, int ngrid, const float* input_a,
                           const float* input_b, float* output, int size);
+
+//======================================================================================//
+//// launch the kernel
+////
+extern void gpu_fun(const int ngrid, const int block, const float* R, const float* r,
+                   float* D, const int J, const int N);
+

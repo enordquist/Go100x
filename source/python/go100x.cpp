@@ -71,9 +71,10 @@ PYBIND11_MODULE(go100x, gox)
         return result;
     };
     
-    auto launch_fun_calculate = [](farray_t R, farray_t r, int J) {
+    auto launch_cpu_fun = [](farray_t R, farray_t r) {
 
         const int     N = R.size();
+        const int     J = r.size();
         auto         fD = farray_t(N);
         const float* fR = R.data();
         const float* fr = r.data();
@@ -127,7 +128,45 @@ PYBIND11_MODULE(go100x, gox)
         return result;
     };
 
+    auto launch_gpu_fun = [](int grid, int block, farray_t matrix_a,
+                                   farray_t matrix_b) {
+
+        auto         result    = farray_t(matrix_a.size());
+        const float* fmatrix_a = matrix_a.data();
+        const float* fmatrix_b = matrix_b.data();
+        // time the execution on the GPU
+        float *fmatrix_a_d, *fmatrix_b_d, *output_d;
+        int size_a = matrix_a.size();
+        int size_b = matrix_b.size();
+        int size_o = matrix_a.size();
+        cudaSetDevice(0);
+        CUDA_CHECK_CALL( cudaMalloc(&fmatrix_a_d, size_a*sizeof(float)) );
+        CUDA_CHECK_CALL( cudaMalloc(&fmatrix_b_d, size_b*sizeof(float)) );
+        CUDA_CHECK_CALL( cudaMalloc(&output_d,    size_o*sizeof(float)) );
+
+        CUDA_CHECK_CALL( cudaMemcpy(fmatrix_a_d, fmatrix_a, size_a*sizeof(float), cudaMemcpyHostToDevice) );
+        CUDA_CHECK_CALL( cudaMemcpy(fmatrix_b_d, fmatrix_b, size_b*sizeof(float), cudaMemcpyHostToDevice) );
+
+  
+        {
+            CUDA_CHECK_LAST_ERROR();
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[GPU<<<", grid, ", ", block, ">>>]");
+            gpu_fun( grid, block, fmatrix_a_d, fmatrix_b_d, output_d, matrix_a.size(), matrix_b.size() );
+            CUDA_CHECK_LAST_ERROR();
+            CUDA_CHECK_CALL( cudaDeviceSynchronize() );
+        }
+
+
+        CUDA_CHECK_CALL( cudaFree(fmatrix_a_d) );
+        CUDA_CHECK_CALL( cudaFree(fmatrix_b_d) );
+        CUDA_CHECK_CALL( cudaMemcpy(result.mutable_data(), output_d, size_o*sizeof(float), cudaMemcpyDeviceToHost) );
+        CUDA_CHECK_CALL( cudaFree(output_d) );
+
+        return result;
+    };
+
     gox.def("calculate_cpu", launch_cpu_calculate, "launch the calculation on cpu");
     gox.def("calculate_gpu", launch_gpu_calculate, "launch the calculation on gpu");
-    gox.def("calculate_fun", launch_fun_calculate, "launch the calculation on cpu, too");
+    gox.def("fun_cpu", launch_cpu_fun, "launch the calculation on cpu, too");
+    gox.def("fun_gpu", launch_gpu_fun, "launch the calculation on gpu, too");
 }
