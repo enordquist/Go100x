@@ -23,8 +23,8 @@ void funv1Kernel(
 // r_d: grid points for Lebedev quadratur
 // J: number of grid points
 // N: number of atoms
-// D_: output/Born_radii
-const float *R_d, const float *r_d, const float *D_d, int J, int N)
+// D_d: output/Born_radii
+const float *R_d, const float *r_d, float *D_d, int J, int N)
 {
   int i0 = threadIdx.x + blockIdx.x * blockDim.x;
   int j0 = threadIdx.y + blockIdx.y * blockDim.y;
@@ -32,22 +32,19 @@ const float *R_d, const float *r_d, const float *D_d, int J, int N)
   int stridex = blockDim.x * gridDim.x;
   int stridey = blockDim.y * gridDim.y;
 
-//  for (int i = i0; i < N; i+=stridex)
-//  {
-//    float D_d[d] = 0.0f;
-//    for (int j = j0; j < J; j+=stridey)
-//    {
-//
-//      float sum_k = 0.0f;
-//      for (int k = 0; k < N; ++k)
-//      {
-//          // do distance calulation between neighboring atoms
-//          // and grid point
-//          sum_k += abs (R_d[i] + r_d[j] - R[k]);
-//      }
-//    }
-//    D_d[i] += sum_k;
-//  }
+  for (int i = i0; i < N; i+=stridex)
+  {
+    D_d[i]=0.0f;
+    for (int j = j0; j < J; j+=stridey)
+    {
+      for (int k = 0; k < N; ++k)
+      {
+          // do distance calulation between neighboring atoms
+          // and grid point
+          D_d[i] += abs (R_d[i] + r_d[j] - R_d[k]);
+      }
+    }
+  }
 }
 
 //======================================================================================//

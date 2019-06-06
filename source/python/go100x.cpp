@@ -105,8 +105,9 @@ PYBIND11_MODULE(go100x, gox)
         return result;
     };
 
-    auto launch_fun_calculate = [](farray_t R, farray_t r, int J) {
+    auto launch_cpu_fun = [](farray_t R, farray_t r) {
         const int    N  = R.size();
+        const int    J  = r.size();
         auto         fD = farray_t(N);
         const float* fR = R.data();
         const float* fr = r.data();
@@ -203,9 +204,10 @@ PYBIND11_MODULE(go100x, gox)
         return result;
     };
 
-    // auto launch_gpu_funv1 = [](int3 grid, int3 block, farray_t matrix_a,
-    auto launch_gpu_funv1 = [](dim3 grid, dim3 block, farray_t matrix_a,
+    auto launch_gpu_funv1 = [to_dim3](py::list grid_list, py::list block_list, farray_t matrix_a,
                                farray_t matrix_b) {
+        dim3         grid      = to_dim3(grid_list);
+        dim3         block     = to_dim3(block_list);
         auto         result    = farray_t(matrix_a.size());
         const float* fmatrix_a = matrix_a.data();
         const float* fmatrix_b = matrix_b.data();
