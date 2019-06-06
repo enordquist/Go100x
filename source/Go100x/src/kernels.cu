@@ -4,16 +4,16 @@
 //======================================================================================//
 // dummy cuda kernel
 //
-__global__
-void calculateKernel(const float* input_a, const float* input_b, float* output, int size)
+__global__ void calculateKernel(const float* input_a, const float* input_b, float* output,
+                                int size)
 {
-  int index = threadIdx.x + blockIdx.x * blockDim.x;
-  int stride = blockDim.x * gridDim.x;
+    int index  = threadIdx.x + blockIdx.x * blockDim.x;
+    int stride = blockDim.x * gridDim.x;
 
-  for(int i = index; i < size; i += stride)
-  {
-    output[i] = input_a[i] * input_b[i];
-  }
+    for(int i = index; i < size; i += stride)
+    {
+        output[i] = input_a[i] * input_b[i];
+    }
 }
 
 
@@ -53,57 +53,54 @@ const float *R_d, const float *r_d, const float *D_d, int J, int N)
 //======================================================================================//
 // launch the kernel
 //
-void gpu_calculate(int block, int ngrid, const float* input_a, const float* input_b,
-                   float* output, int size)
+void gpu_calculate(const dim3& block, const dim3& ngrid, const float* input_a,
+                   const float* input_b, float* output, int size)
 {
-  calculateKernel<<<ngrid, block>>>(input_a, input_b, output, size);
+    calculateKernel<<<ngrid, block>>>(input_a, input_b, output, size);
 }
 
-
-
-//
 //======================================================================================//
 // dummy cuda kernel
 //
-__global__
-void funKernel(const float* R, const float* r, float* D, const int J, const int N)
+__global__ void funKernel(const float* R, const float* r, float* D, const int J,
+                          const int N)
 {
-  __shared__ float output_shared[256];
-  float DistR;
-  int atomI = blockIdx.x, i;
+    __shared__ float output_shared[256];
+    float            DistR;
+    int              atomI = blockIdx.x, i;
 
-  output_shared[threadIdx.x] = 0.f;
-  for(int j = threadIdx.x; j < J; j += blockDim.x)
-  {
-     for(int k = 0; k < N; k++) // Loop the LookupTable
-     {
-        DistR = R[atomI] + r[j] - R[k];
-        output_shared[threadIdx.x] += fabsf(DistR);
-     }
-  }
-  __syncthreads();
-  if(threadIdx.x==0) 
-  {
-    DistR = 0.f;
-    for(i = 0; i < blockDim.x; i++) 
+    output_shared[threadIdx.x] = 0.f;
+    for(int j = threadIdx.x; j < J; j += blockDim.x)
     {
-      DistR += output_shared[i];
+        for(int k = 0; k < N; k++)  // Loop the LookupTable
+        {
+            DistR = R[atomI] + r[j] - R[k];
+            output_shared[threadIdx.x] += fabsf(DistR);
+        }
     }
-    D[atomI] = DistR;
-  }
+    __syncthreads();
+    if(threadIdx.x == 0)
+    {
+        DistR = 0.f;
+        for(i = 0; i < blockDim.x; i++)
+        {
+            DistR += output_shared[i];
+        }
+        D[atomI] = DistR;
+    }
 }
 
 //======================================================================================//
 // launch the kernel
 //
-void gpu_fun(int ngrid, int block, const float* R, const float* r,
-                   float* D, const int J, const int N)
+void gpu_fun(const dim3& ngrid, const dim3& block, const float* R, const float* r,
+             float* D, const int J, const int N)
 {
-  funKernel<<<ngrid, block>>>(R, r, D, J, N);
+    funKernel<<<ngrid, block>>>(R, r, D, J, N);
 }
 
 //void gpu_funv1(int3 ngrid, int3 block, const float* R_d, const float* r_d,
-void gpu_funv1(dim3 ngrid, dim3 block, const float* R_d, const float* r_d,
+void gpu_funv1(const dim3&  ngrid, const dim3&  block, const float* R_d, const float* r_d,
                    float* D_d, const int J, const int N)
 {
   funv1Kernel<<<ngrid, block>>>(R_d, r_d, D_d, J, N);

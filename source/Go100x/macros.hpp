@@ -101,76 +101,73 @@ inline uintmax_t GetThisThreadID()
 //--------------------------------------------------------------------------------------//
 // this is always defined, even in release mode
 //
-#    if !defined(CUDA_CHECK_CALL)
-#        define CUDA_CHECK_CALL(err)                                                     \
+#if !defined(CUDA_CHECK_CALL)
+#    define CUDA_CHECK_CALL(err)                                                         \
+        {                                                                                \
+            if(cudaSuccess != err)                                                       \
             {                                                                            \
+                std::stringstream ss;                                                    \
+                ss << "cudaCheckError() failed at " << __FUNCTION__ << "@'" << __FILE__  \
+                   << "':" << __LINE__ << " : " << cudaGetErrorString(err);              \
+                fprintf(stderr, "%s\n", ss.str().c_str());                               \
+                throw std::runtime_error(ss.str().c_str());                              \
+            }                                                                            \
+        }
+#endif
+
+// this is only defined in debug mode
+//
+#if !defined(CUDA_CHECK_LAST_ERROR)
+#    if defined(DEBUG)
+#        define CUDA_CHECK_LAST_ERROR()                                                  \
+            {                                                                            \
+                cudaStreamSynchronize(0);                                                \
+                cudaError err = cudaGetLastError();                                      \
                 if(cudaSuccess != err)                                                   \
                 {                                                                        \
                     std::stringstream ss;                                                \
                     ss << "cudaCheckError() failed at " << __FUNCTION__ << "@'"          \
                        << __FILE__ << "':" << __LINE__ << " : "                          \
                        << cudaGetErrorString(err);                                       \
-                    fprintf(stderr, "%s\n", ss.str().c_str());                           \
-                    throw std::runtime_error(ss.str().c_str());                          \
+                    fprintf(stderr, "cudaCheckError() failed at %s@'%s':%i : %s\n",      \
+                            __FUNCTION__, __FILE__, __LINE__, cudaGetErrorString(err));  \
+                    throw std::runtime_error(ss.str());                                  \
                 }                                                                        \
             }
+#    else
+#        define CUDA_CHECK_LAST_ERROR()                                                  \
+            {                                                                            \
+                ;                                                                        \
+            }
 #    endif
+#endif
 
 // this is only defined in debug mode
 //
-#    if !defined(CUDA_CHECK_LAST_ERROR)
-#        if defined(DEBUG)
-#            define CUDA_CHECK_LAST_ERROR()                                              \
+#if !defined(CUDA_CHECK_LAST_STREAM_ERROR)
+#    if defined(DEBUG)
+#        define CUDA_CHECK_LAST_STREAM_ERROR(stream)                                     \
+            {                                                                            \
+                cudaStreamSynchronize(stream);                                           \
+                cudaError err = cudaGetLastError();                                      \
+                if(cudaSuccess != err)                                                   \
                 {                                                                        \
-                    cudaStreamSynchronize(0);                                            \
-                    cudaError err = cudaGetLastError();                                  \
-                    if(cudaSuccess != err)                                               \
-                    {                                                                    \
-                        std::stringstream ss;                                            \
-                        ss << "cudaCheckError() failed at " << __FUNCTION__ << "@'"      \
-                           << __FILE__ << "':" << __LINE__ << " : "                      \
-                           << cudaGetErrorString(err);                                   \
-                        fprintf(stderr, "cudaCheckError() failed at %s@'%s':%i : %s\n",  \
-                                __FUNCTION__, __FILE__, __LINE__,                        \
-                                cudaGetErrorString(err));                                \
-                        throw std::runtime_error(ss.str());                              \
-                    }                                                                    \
-                }
-#        else
-#            define CUDA_CHECK_LAST_ERROR()                                              \
-                {                                                                        \
-                    ;                                                                    \
-                }
-#        endif
+                    std::stringstream ss;                                                \
+                    ss << "cudaCheckError() failed at " << __FUNCTION__ << "@'"          \
+                       << __FILE__ << "':" << __LINE__ << " : "                          \
+                       << cudaGetErrorString(err);                                       \
+                    fprintf(stderr, "cudaCheckError() failed at %s@'%s':%i : %s\n",      \
+                            __FUNCTION__, __FILE__, __LINE__, cudaGetErrorString(err));  \
+                    throw std::runtime_error(ss.str());                                  \
+                }                                                                        \
+            }
+#    else
+#        define CUDA_CHECK_LAST_STREAM_ERROR(stream)                                     \
+            {                                                                            \
+                ;                                                                        \
+            }
 #    endif
-
-// this is only defined in debug mode
-//
-#    if !defined(CUDA_CHECK_LAST_STREAM_ERROR)
-#        if defined(DEBUG)
-#            define CUDA_CHECK_LAST_STREAM_ERROR(stream)                                 \
-                {                                                                        \
-                    cudaStreamSynchronize(stream);                                       \
-                    cudaError err = cudaGetLastError();                                  \
-                    if(cudaSuccess != err)                                               \
-                    {                                                                    \
-                        std::stringstream ss;                                            \
-                        ss << "cudaCheckError() failed at " << __FUNCTION__ << "@'"      \
-                           << __FILE__ << "':" << __LINE__ << " : "                      \
-                           << cudaGetErrorString(err);                                   \
-                        fprintf(stderr, "cudaCheckError() failed at %s@'%s':%i : %s\n",  \
-                                __FUNCTION__, __FILE__, __LINE__,                        \
-                                cudaGetErrorString(err));                                \
-                        throw std::runtime_error(ss.str());                              \
-                    }                                                                    \
-                }
-#        else
-#            define CUDA_CHECK_LAST_STREAM_ERROR(stream)                                 \
-                {                                                                        \
-                    ;                                                                    \
-                }
-#        endif
-#    endif
+#endif
 
 // #endif  // NVCC
 

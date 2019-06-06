@@ -41,6 +41,13 @@ using auto_tuple_t =
 using cuda_tuple_t =
     tim::auto_tuple<real_clock, system_clock, user_clock, cpu_clock, cuda_event>;
 
+// define output operator for dim3
+std::ostream& operator<<(std::ostream& os, const dim3& _dim)
+{
+    os << "(" << _dim.x << "," << _dim.y << "," << _dim.z << ")";
+    return os;
+}
+
 //======================================================================================//
 //  Python wrappers
 //======================================================================================//
@@ -50,6 +57,34 @@ PYBIND11_MODULE(go100x, gox)
     //----------------------------------------------------------------------------------//
     using gox::string_t;
     py::add_ostream_redirect(gox, "ostream_redirect");
+
+    auto to_dim3 = [](const py::list& _list) {
+        dim3 _dims(1, 1, 1);
+        switch(_list.size())
+        {
+            case 0: break;
+            case 1:
+            {
+                _dims.x = _list[0].cast<unsigned int>();
+                break;
+            }
+            case 2:
+            {
+                _dims.x = _list[0].cast<unsigned int>();
+                _dims.y = _list[1].cast<unsigned int>();
+                break;
+            }
+            case 3:
+            default:
+            {
+                _dims.x = _list[0].cast<unsigned int>();
+                _dims.y = _list[1].cast<unsigned int>();
+                _dims.z = _list[2].cast<unsigned int>();
+                break;
+            }
+        }
+        return _dims;
+    };
 
     auto launch_cpu_calculate = [](farray_t matrix_a, farray_t matrix_b) {
         if(matrix_a.size() != matrix_b.size())
@@ -83,8 +118,8 @@ PYBIND11_MODULE(go100x, gox)
         return fD;
     };
 
-    auto launch_gpu_calculate = [](int block, int grid, farray_t matrix_a,
-                                   farray_t matrix_b) {
+    auto launch_gpu_calculate = [to_dim3](py::list grid_list, py::list block_list,
+                                          farray_t matrix_a, farray_t matrix_b) {
         if(matrix_a.size() != matrix_b.size())
         {
             std::cerr << "Error! matrix A size does not match matrix B size: "
@@ -92,6 +127,8 @@ PYBIND11_MODULE(go100x, gox)
             throw std::runtime_error("Matrix input error");
         }
 
+        dim3         grid      = to_dim3(grid_list);
+        dim3         block     = to_dim3(block_list);
         auto         result    = farray_t(matrix_a.size());
         const float* fmatrix_a = matrix_a.data();
         const float* fmatrix_b = matrix_b.data();
@@ -126,82 +163,84 @@ PYBIND11_MODULE(go100x, gox)
         return result;
     };
 
-    auto launch_gpu_fun = [](int grid, int block, farray_t matrix_a,
-                                   farray_t matrix_b) {
-
+    auto launch_gpu_fun = [to_dim3](py::list grid_list, py::list block_list,
+                                    farray_t matrix_a, farray_t matrix_b) {
+        dim3         grid      = to_dim3(grid_list);
+        dim3         block     = to_dim3(block_list);
         auto         result    = farray_t(matrix_a.size());
         const float* fmatrix_a = matrix_a.data();
         const float* fmatrix_b = matrix_b.data();
         // time the execution on the GPU
         float *fmatrix_a_d, *fmatrix_b_d, *output_d;
-        int size_a = matrix_a.size();
-        int size_b = matrix_b.size();
-        int size_o = matrix_a.size();
+        int    size_a = matrix_a.size();
+        int    size_b = matrix_b.size();
+        int    size_o = matrix_a.size();
         cudaSetDevice(0);
-        CUDA_CHECK_CALL( cudaMalloc(&fmatrix_a_d, size_a*sizeof(float)) );
-        CUDA_CHECK_CALL( cudaMalloc(&fmatrix_b_d, size_b*sizeof(float)) );
-        CUDA_CHECK_CALL( cudaMalloc(&output_d,    size_o*sizeof(float)) );
+        CUDA_CHECK_CALL(cudaMalloc(&fmatrix_a_d, size_a * sizeof(float)));
+        CUDA_CHECK_CALL(cudaMalloc(&fmatrix_b_d, size_b * sizeof(float)));
+        CUDA_CHECK_CALL(cudaMalloc(&output_d, size_o * sizeof(float)));
 
-        CUDA_CHECK_CALL( cudaMemcpy(fmatrix_a_d, fmatrix_a, size_a*sizeof(float), cudaMemcpyHostToDevice) );
-        CUDA_CHECK_CALL( cudaMemcpy(fmatrix_b_d, fmatrix_b, size_b*sizeof(float), cudaMemcpyHostToDevice) );
-
+        CUDA_CHECK_CALL(cudaMemcpy(fmatrix_a_d, fmatrix_a, size_a * sizeof(float),
+                                   cudaMemcpyHostToDevice));
+        CUDA_CHECK_CALL(cudaMemcpy(fmatrix_b_d, fmatrix_b, size_b * sizeof(float),
+                                   cudaMemcpyHostToDevice));
 
         {
             CUDA_CHECK_LAST_ERROR();
             TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[GPU<<<", grid, ", ", block, ">>>]");
-            gpu_fun( grid, block, fmatrix_a_d, fmatrix_b_d, output_d, matrix_a.size(), matrix_b.size() );
+            gpu_fun(grid, block, fmatrix_a_d, fmatrix_b_d, output_d, matrix_a.size(),
+                    matrix_b.size());
             CUDA_CHECK_LAST_ERROR();
-            CUDA_CHECK_CALL( cudaDeviceSynchronize() );
+            CUDA_CHECK_CALL(cudaDeviceSynchronize());
         }
 
-
-        CUDA_CHECK_CALL( cudaFree(fmatrix_a_d) );
-        CUDA_CHECK_CALL( cudaFree(fmatrix_b_d) );
-        CUDA_CHECK_CALL( cudaMemcpy(result.mutable_data(), output_d, size_o*sizeof(float), cudaMemcpyDeviceToHost) );
-        CUDA_CHECK_CALL( cudaFree(output_d) );
+        CUDA_CHECK_CALL(cudaFree(fmatrix_a_d));
+        CUDA_CHECK_CALL(cudaFree(fmatrix_b_d));
+        CUDA_CHECK_CALL(cudaMemcpy(result.mutable_data(), output_d,
+                                   size_o * sizeof(float), cudaMemcpyDeviceToHost));
+        CUDA_CHECK_CALL(cudaFree(output_d));
 
         return result;
     };
 
-    //auto launch_gpu_funv1 = [](int3 grid, int3 block, farray_t matrix_a,
+    // auto launch_gpu_funv1 = [](int3 grid, int3 block, farray_t matrix_a,
     auto launch_gpu_funv1 = [](dim3 grid, dim3 block, farray_t matrix_a,
-                                   farray_t matrix_b) {
-
+                               farray_t matrix_b) {
         auto         result    = farray_t(matrix_a.size());
         const float* fmatrix_a = matrix_a.data();
         const float* fmatrix_b = matrix_b.data();
         // time the execution on the GPU
         float *fmatrix_a_d, *fmatrix_b_d, *output_d;
-        int size_a = matrix_a.size();
-        int size_b = matrix_b.size();
-        int size_o = matrix_a.size();
+        int    size_a = matrix_a.size();
+        int    size_b = matrix_b.size();
+        int    size_o = matrix_a.size();
         cudaSetDevice(0);
-        CUDA_CHECK_CALL( cudaMalloc(&fmatrix_a_d, size_a*sizeof(float)) );
-        CUDA_CHECK_CALL( cudaMalloc(&fmatrix_b_d, size_b*sizeof(float)) );
-        CUDA_CHECK_CALL( cudaMalloc(&output_d,    size_o*sizeof(float)) );
+        CUDA_CHECK_CALL(cudaMalloc(&fmatrix_a_d, size_a * sizeof(float)));
+        CUDA_CHECK_CALL(cudaMalloc(&fmatrix_b_d, size_b * sizeof(float)));
+        CUDA_CHECK_CALL(cudaMalloc(&output_d, size_o * sizeof(float)));
 
-        CUDA_CHECK_CALL( cudaMemcpy(fmatrix_a_d, fmatrix_a, size_a*sizeof(float), cudaMemcpyHostToDevice) );
-        CUDA_CHECK_CALL( cudaMemcpy(fmatrix_b_d, fmatrix_b, size_b*sizeof(float), cudaMemcpyHostToDevice) );
-
+        CUDA_CHECK_CALL(cudaMemcpy(fmatrix_a_d, fmatrix_a, size_a * sizeof(float),
+                                   cudaMemcpyHostToDevice));
+        CUDA_CHECK_CALL(cudaMemcpy(fmatrix_b_d, fmatrix_b, size_b * sizeof(float),
+                                   cudaMemcpyHostToDevice));
 
         {
             CUDA_CHECK_LAST_ERROR();
             TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[GPU<<<", grid, ", ", block, ">>>]");
-            gpu_funv1( grid, block, fmatrix_a_d, fmatrix_b_d, output_d, matrix_a.size(), matrix_b.size() );
+            gpu_funv1(grid, block, fmatrix_a_d, fmatrix_b_d, output_d, matrix_a.size(),
+                      matrix_b.size());
             CUDA_CHECK_LAST_ERROR();
-            CUDA_CHECK_CALL( cudaDeviceSynchronize() );
+            CUDA_CHECK_CALL(cudaDeviceSynchronize());
         }
 
-
-        CUDA_CHECK_CALL( cudaFree(fmatrix_a_d) );
-        CUDA_CHECK_CALL( cudaFree(fmatrix_b_d) );
-        CUDA_CHECK_CALL( cudaMemcpy(result.mutable_data(), output_d, size_o*sizeof(float), cudaMemcpyDeviceToHost) );
-        CUDA_CHECK_CALL( cudaFree(output_d) );
+        CUDA_CHECK_CALL(cudaFree(fmatrix_a_d));
+        CUDA_CHECK_CALL(cudaFree(fmatrix_b_d));
+        CUDA_CHECK_CALL(cudaMemcpy(result.mutable_data(), output_d,
+                                   size_o * sizeof(float), cudaMemcpyDeviceToHost));
+        CUDA_CHECK_CALL(cudaFree(output_d));
 
         return result;
     };
-
-
 
     gox.def("calculate_cpu", launch_cpu_calculate, "launch the calculation on cpu");
     gox.def("calculate_gpu", launch_gpu_calculate, "launch the calculation on gpu");
