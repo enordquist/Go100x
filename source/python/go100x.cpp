@@ -244,7 +244,7 @@ PYBIND11_MODULE(go100x, gox)
 
     gox.def("calculate_cpu", launch_cpu_calculate, "launch the calculation on cpu");
     gox.def("calculate_gpu", launch_gpu_calculate, "launch the calculation on gpu");
-    gox.def("fun_cpu", launch_cpu_fun, "launch the calculation on cpu, too");
+    // gox.def("fun_cpu", launch_cpu_fun, "launch the calculation on cpu, too");
     gox.def("fun_gpu", launch_gpu_fun, "launch the calculation on gpu, too");
     gox.def("funv1_gpu", launch_gpu_funv1, "launch the calculation on gpu_funv1, too");
 }
