@@ -114,9 +114,9 @@ PYBIND11_MODULE(go100x, gox)
         // time the execution on the CPU
         {
             TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[CPU]");
-            cpu_fun(fR, fr, fD.mutable_data(), J, N);
+            cpu_fun(fmatrix_a, fmatrix_b, result.mutable_data(), size_a, size_b);
         }
-        return fD;
+        return result;
     };
 
     auto launch_gpu_calculate = [to_dim3](py::list grid_list, py::list block_list,

@@ -16,7 +16,6 @@ __global__ void calculateKernel(const float* input_a, const float* input_b, floa
     }
 }
 
-
 __global__
 void funv1Kernel(
 // R_d: coordinates of atoms
@@ -26,11 +25,14 @@ void funv1Kernel(
 // D_d: output/Born_radii
 const float *R_d, const float *r_d, float *D_d, int J, int N)
 {
-  int i0 = threadIdx.x + blockIdx.x * blockDim.x;
-  int j0 = threadIdx.y + blockIdx.y * blockDim.y;
+    // R_d: coordinates of atoms
+    // r_d: grid points for Lebedev quadratur
+    // J: number of grid points
+    // N: number of atoms
+    // D_: output/Born_radii
 
-  int stridex = blockDim.x * gridDim.x;
-  int stridey = blockDim.y * gridDim.y;
+    int i0 = threadIdx.x + blockIdx.x * blockDim.x;
+    int j0 = threadIdx.y + blockIdx.y * blockDim.y;
 
   for (int i = i0; i < N; i+=stridex)
   {
@@ -96,10 +98,9 @@ void gpu_fun(const dim3& ngrid, const dim3& block, const float* R, const float* 
     funKernel<<<ngrid, block>>>(R, r, D, J, N);
 }
 
-//void gpu_funv1(int3 ngrid, int3 block, const float* R_d, const float* r_d,
-void gpu_funv1(const dim3&  ngrid, const dim3&  block, const float* R_d, const float* r_d,
-                   float* D_d, const int J, const int N)
+// void gpu_funv1(int3 ngrid, int3 block, const float* R_d, const float* r_d,
+void gpu_funv1(const dim3& ngrid, const dim3& block, const float* R_d, const float* r_d,
+               float* D_d, const int J, const int N)
 {
-  funv1Kernel<<<ngrid, block>>>(R_d, r_d, D_d, J, N);
+    funv1Kernel<<<ngrid, block>>>(R_d, r_d, D_d, J, N);
 }
-
