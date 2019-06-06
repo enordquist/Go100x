@@ -29,3 +29,5 @@ extern void gpu_calculate(int block, int ngrid, const float* input_a,
 extern void gpu_fun(const int ngrid, const int block, const float* R, const float* r,
                    float* D, const int J, const int N);
 
+extern void gpu_funv1(const int3 ngrid, const int3 block, const float* R, const float* r,
+                   float* D, const int J, const int N);
