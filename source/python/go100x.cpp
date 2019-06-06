@@ -105,17 +105,18 @@ PYBIND11_MODULE(go100x, gox)
         return result;
     };
 
-    auto launch_fun_calculate = [](farray_t R, farray_t r, int J) {
-        const int    N  = R.size();
-        auto         fD = farray_t(N);
-        const float* fR = R.data();
-        const float* fr = r.data();
+    auto launch_cpu_fun = [](farray_t matrix_a, farray_t matrix_b) {
+        const int    size_a      = matrix_a.size();
+        const int    size_b      = matrix_b.size();
+        auto         result      = farray_t(size_a);
+        const float* fmatrix_a   = matrix_a.data();
+        const float* fmatrix_b   = matrix_b.data();
         // time the execution on the CPU
         {
             TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[CPU]");
-            cpu_fun(fR, fr, fD.mutable_data(), J, N);
+            cpu_fun(fmatrix_a, fmatrix_b, result.mutable_data(), size_a, size_b);
         }
-        return fD;
+        return result;
     };
 
     auto launch_gpu_calculate = [to_dim3](py::list grid_list, py::list block_list,
@@ -244,7 +245,7 @@ PYBIND11_MODULE(go100x, gox)
 
     gox.def("calculate_cpu", launch_cpu_calculate, "launch the calculation on cpu");
     gox.def("calculate_gpu", launch_gpu_calculate, "launch the calculation on gpu");
-    // gox.def("fun_cpu", launch_cpu_fun, "launch the calculation on cpu, too");
+    gox.def("fun_cpu", launch_cpu_fun, "launch the calculation on cpu, too");
     gox.def("fun_gpu", launch_gpu_fun, "launch the calculation on gpu, too");
     gox.def("funv1_gpu", launch_gpu_funv1, "launch the calculation on gpu_funv1, too");
 }
