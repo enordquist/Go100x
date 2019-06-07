@@ -28,16 +28,18 @@ const float *R_d, const float *r_d, float *D_d, int N, int J)
 {
   int i0 = threadIdx.x + blockIdx.x * blockDim.x;
   int j0 = threadIdx.y + blockIdx.y * blockDim.y;
+  int k0 = threadIdx.z + blockIdx.z * blockDim.z;
 
   int stridex = blockDim.x * gridDim.x;
   int stridey = blockDim.y * gridDim.y;
+  int stridez = blockDim.z * gridDim.z;
 
   for (int i = i0; i < N; i+=stridex)
   {
     D_d[i]=0.0f;
     for (int j = j0; j < J; j+=stridey)
     {
-      for (int k = 0; k < N; ++k)
+      for (int k = k0; k < N; k+=stridez)
       {
           // do distance calulation between neighboring atoms
           // and grid point
