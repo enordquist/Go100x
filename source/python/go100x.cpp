@@ -35,18 +35,11 @@
 using namespace tim::component;
 
 using auto_tuple_t =
-    tim::auto_tuple<real_clock, system_clock, user_clock, cpu_clock, cpu_util>;
+    tim::auto_tuple<real_clock, cpu_clock>;
 
 // unlike most components, "cuda_event" does not support nesting
 using cuda_tuple_t =
-    tim::auto_tuple<real_clock, system_clock, user_clock, cpu_clock, cuda_event>;
-
-// define output operator for dim3
-std::ostream& operator<<(std::ostream& os, const dim3& _dim)
-{
-    os << "(" << _dim.x << "," << _dim.y << "," << _dim.z << ")";
-    return os;
-}
+    tim::auto_tuple<real_clock, cpu_clock, cuda_event>;
 
 //======================================================================================//
 //  Python wrappers
@@ -57,6 +50,13 @@ PYBIND11_MODULE(go100x, gox)
     //----------------------------------------------------------------------------------//
     using gox::string_t;
     py::add_ostream_redirect(gox, "ostream_redirect");
+
+    auto set_device = [](int deviceId)
+    {
+        cudaSetDevice(deviceId);
+    };
+
+    //----------------------------------------------------------------------------------//
 
     auto to_dim3 = [](const py::list& _list) {
         dim3 _dims(1, 1, 1);
@@ -148,8 +148,8 @@ PYBIND11_MODULE(go100x, gox)
 
         {
             CUDA_CHECK_LAST_ERROR();
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[GPU<<<", grid, ",", block, ">>>]");
-            gpu_calculate(block, grid, fmatrix_a_d, fmatrix_b_d, output_d,
+            TIMEMORY_BASIC_AUTO_TUPLE(cuda_tuple_t, "[GPU<<<", grid, ",", block, ">>>]");
+            gpu_calculate(grid, block, fmatrix_a_d, fmatrix_b_d, output_d,
                           matrix_a.size());
             CUDA_CHECK_LAST_ERROR();
             CUDA_CHECK_CALL(cudaDeviceSynchronize());
@@ -244,6 +244,7 @@ PYBIND11_MODULE(go100x, gox)
         return result;
     };
 
+    gox.def("set_device", set_device, "set the GPU device number");
     gox.def("calculate_cpu", launch_cpu_calculate, "launch the calculation on cpu");
     gox.def("calculate_gpu", launch_gpu_calculate, "launch the calculation on gpu");
     gox.def("fun_cpu", launch_cpu_fun, "launch the calculation on cpu, too");

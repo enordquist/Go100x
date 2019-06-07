@@ -52,7 +52,7 @@ __global__ void funv1Kernel(
 //======================================================================================//
 // launch the kernel
 //
-void gpu_calculate(const dim3& block, const dim3& ngrid, const float* input_a,
+void gpu_calculate(const dim3& ngrid, const dim3& block, const float* input_a,
                    const float* input_b, float* output, int size)
 {
     calculateKernel<<<ngrid, block>>>(input_a, input_b, output, size);
