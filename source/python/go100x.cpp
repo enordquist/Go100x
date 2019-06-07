@@ -189,8 +189,8 @@ PYBIND11_MODULE(go100x, gox)
         {
             CUDA_CHECK_LAST_ERROR();
             TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[GPU<<<", grid, ", ", block, ">>>]");
-            gpu_fun(grid, block, fmatrix_a_d, fmatrix_b_d, output_d, matrix_a.size(),
-                    matrix_b.size());
+            gpu_fun(grid, block, fmatrix_a_d, fmatrix_b_d, output_d, matrix_b.size(),
+                    matrix_a.size());
             CUDA_CHECK_LAST_ERROR();
             CUDA_CHECK_CALL(cudaDeviceSynchronize());
         }
