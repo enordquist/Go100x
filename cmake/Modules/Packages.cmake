@@ -12,6 +12,8 @@ target_include_directories(Go100x-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
 set_target_properties(Go100x-cuda PROPERTIES
+    INTERFACE_LANGUAGE                      CUDA
+    INTERFACE_LINKER_LANGUAGE               CUDA
     INTERFACE_CUDA_STANDARD                 ${CMAKE_CUDA_STANDARD}
     INTERFACE_CUDA_STANDARD_REQUIRED        ${CMAKE_CUDA_STANDARD_REQUIRED}
     INTERFACE_CUDA_RESOLVE_DEVICE_SYMBOLS   ON
@@ -119,6 +121,15 @@ endif()
 target_include_directories(Go100x-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
+foreach(_LIB CUDART rt)
+    if(CUDA_${_LIB}_LIBRARY)
+        target_link_libraries(Go100x-cuda INTERFACE ${CUDA_${_LIB}_LIBRARY})
+    endif()
+endforeach()
+
+if(NOT CUDA_CUDART_LIBRARY AND CUDA_cudart_static_LIBRARY)
+    target_link_libraries(Go100x-cuda INTERFACE ${CUDA_cudart_static_LIBRARY})
+endif()
 
 #----------------------------------------------------------------------------------------#
 #
