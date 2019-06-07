@@ -28,4 +28,4 @@ extern void gpu_fun(const dim3& ngrid, const dim3& block, const float* R, const 
                     float* D, const int J, const int N);
 
 extern void gpu_funv1(const dim3& ngrid, const dim3& block, const float* R,
-                      const float* r, float* D, const int J, const int N);
+                      const float* r, float* D, const int N, const int J);

@@ -16,6 +16,7 @@ __global__ void calculateKernel(const float* input_a, const float* input_b, floa
     }
 }
 
+
 __global__
 void funv1Kernel(
 // R_d: coordinates of atoms
@@ -23,16 +24,13 @@ void funv1Kernel(
 // J: number of grid points
 // N: number of atoms
 // D_d: output/Born_radii
-const float *R_d, const float *r_d, float *D_d, int J, int N)
+const float *R_d, const float *r_d, float *D_d, int N, int J)
 {
-    // R_d: coordinates of atoms
-    // r_d: grid points for Lebedev quadratur
-    // J: number of grid points
-    // N: number of atoms
-    // D_: output/Born_radii
+  int i0 = threadIdx.x + blockIdx.x * blockDim.x;
+  int j0 = threadIdx.y + blockIdx.y * blockDim.y;
 
-    int i0 = threadIdx.x + blockIdx.x * blockDim.x;
-    int j0 = threadIdx.y + blockIdx.y * blockDim.y;
+  int stridex = blockDim.x * gridDim.x;
+  int stridey = blockDim.y * gridDim.y;
 
   for (int i = i0; i < N; i+=stridex)
   {
@@ -43,7 +41,9 @@ const float *R_d, const float *r_d, float *D_d, int J, int N)
       {
           // do distance calulation between neighboring atoms
           // and grid point
+          // we have data race here
           D_d[i] += abs (R_d[i] + r_d[j] - R_d[k]);
+          //atomicAdd(&D_d[i], abs (R_d[i] + r_d[j] - R_d[k]));
       }
     }
   }
@@ -98,9 +98,10 @@ void gpu_fun(const dim3& ngrid, const dim3& block, const float* R, const float* 
     funKernel<<<ngrid, block>>>(R, r, D, J, N);
 }
 
-// void gpu_funv1(int3 ngrid, int3 block, const float* R_d, const float* r_d,
-void gpu_funv1(const dim3& ngrid, const dim3& block, const float* R_d, const float* r_d,
-               float* D_d, const int J, const int N)
+//void gpu_funv1(int3 ngrid, int3 block, const float* R_d, const float* r_d,
+void gpu_funv1(const dim3&  ngrid, const dim3&  block, const float* R_d, const float* r_d,
+                   float* D_d, const int N, const int J)
 {
-    funv1Kernel<<<ngrid, block>>>(R_d, r_d, D_d, J, N);
+  funv1Kernel<<<ngrid, block>>>(R_d, r_d, D_d, N, J);
 }
+
