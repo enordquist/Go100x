@@ -17,8 +17,8 @@ set_target_properties(Go100x-cuda PROPERTIES
     INTERFACE_CUDA_RESOLVE_DEVICE_SYMBOLS   ON
     INTERFACE_CUDA_SEPARABLE_COMPILATION    ON)
 
-set(CUDA_GENERIC_ARCH "version")
-set(CUDA_ARCHITECTURES version kepler tesla maxwell pascal volta turing)
+set(CUDA_GENERIC_ARCH "auto")
+set(CUDA_ARCHITECTURES auto kepler tesla maxwell pascal volta turing)
 set(CUDA_ARCH "${CUDA_GENERIC_ARCH}" CACHE STRING "CUDA architecture (options: ${CUDA_ARCHITECTURES})")
 add_feature(CUDA_ARCH "CUDA architecture (options: ${CUDA_ARCHITECTURES})")
 set_property(CACHE CUDA_ARCH PROPERTY STRINGS ${CUDA_ARCHITECTURES})
@@ -118,12 +118,6 @@ endif()
 
 target_include_directories(Go100x-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-
-set_target_properties(Go100x-cuda PROPERTIES
-    INTERFACE_CUDA_STANDARD 14
-    INTERFACE_CUDA_STANDARD_REQUIRED ON
-    INTERFACE_CUDA_RESOLVE_DEVICE_SYMBOLS ON
-    INTERFACE_CUDA_SEPARABLE_COMPILATION ON)
 
 
 #----------------------------------------------------------------------------------------#

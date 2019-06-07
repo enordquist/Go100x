@@ -16,39 +16,37 @@ __global__ void calculateKernel(const float* input_a, const float* input_b, floa
     }
 }
 
-
-__global__
-void funv1Kernel(
-// R_d: coordinates of atoms
-// r_d: grid points for Lebedev quadratur
-// J: number of grid points
-// N: number of atoms
-// D_d: output/Born_radii
-const float *R_d, const float *r_d, float *D_d, int N, int J)
+__global__ void funv1Kernel(
+    // R_d: coordinates of atoms
+    // r_d: grid points for Lebedev quadratur
+    // J: number of grid points
+    // N: number of atoms
+    // D_d: output/Born_radii
+    const float* R_d, const float* r_d, float* D_d, int N, int J)
 {
-  int i0 = threadIdx.x + blockIdx.x * blockDim.x;
-  int j0 = threadIdx.y + blockIdx.y * blockDim.y;
-  int k0 = threadIdx.z + blockIdx.z * blockDim.z;
+    int i0 = threadIdx.x + blockIdx.x * blockDim.x;
+    int j0 = threadIdx.y + blockIdx.y * blockDim.y;
+    int k0 = threadIdx.z + blockIdx.z * blockDim.z;
 
-  int stridex = blockDim.x * gridDim.x;
-  int stridey = blockDim.y * gridDim.y;
-  int stridez = blockDim.z * gridDim.z;
+    int stridex = blockDim.x * gridDim.x;
+    int stridey = blockDim.y * gridDim.y;
+    int stridez = blockDim.z * gridDim.z;
 
-  for (int i = i0; i < N; i+=stridex)
-  {
-    D_d[i]=0.0f;
-    for (int j = j0; j < J; j+=stridey)
+    for(int i = i0; i < N; i += stridex)
     {
-      for (int k = k0; k < N; k+=stridez)
-      {
-          // do distance calulation between neighboring atoms
-          // and grid point
-          // we have data race here
-          D_d[i] += abs (R_d[i] + r_d[j] - R_d[k]);
-          //atomicAdd(&D_d[i], abs (R_d[i] + r_d[j] - R_d[k]));
-      }
+        D_d[i] = 0.0f;
+        for(int j = j0; j < J; j += stridey)
+        {
+            for(int k = k0; k < N; k += stridez)
+            {
+                // do distance calulation between neighboring atoms
+                // and grid point
+                // we have data race here
+                D_d[i] += abs(R_d[i] + r_d[j] - R_d[k]);
+                // atomicAdd(&D_d[i], abs (R_d[i] + r_d[j] - R_d[k]));
+            }
+        }
     }
-  }
 }
 
 //======================================================================================//
@@ -100,10 +98,9 @@ void gpu_fun(const dim3& ngrid, const dim3& block, const float* R, const float* 
     funKernel<<<ngrid, block>>>(R, r, D, J, N);
 }
 
-//void gpu_funv1(int3 ngrid, int3 block, const float* R_d, const float* r_d,
-void gpu_funv1(const dim3&  ngrid, const dim3&  block, const float* R_d, const float* r_d,
-                   float* D_d, const int N, const int J)
+// void gpu_funv1(int3 ngrid, int3 block, const float* R_d, const float* r_d,
+void gpu_funv1(const dim3& ngrid, const dim3& block, const float* R_d, const float* r_d,
+               float* D_d, const int N, const int J)
 {
-  funv1Kernel<<<ngrid, block>>>(R_d, r_d, D_d, N, J);
+    funv1Kernel<<<ngrid, block>>>(R_d, r_d, D_d, N, J);
 }
-

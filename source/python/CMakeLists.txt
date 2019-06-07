@@ -26,7 +26,8 @@ add_library(Go100x-python MODULE
 add_dependencies(Go100x-python Go100x-library)
 target_link_libraries(Go100x-python PRIVATE 
     Go100x-library Go100x-cuda Go100x-submodules Go100x-compile-options
-    timemory-headers timemory-cuda)
+    timemory-headers)
+target_compile_definitions(Go100x-python PRIVATE TIMEMORY_USE_CUDA)
 target_link_libraries(Go100x-python PRIVATE pybind11::module)
 target_include_directories(Go100x-python PRIVATE ${CMAKE_CURRENT_LIST_DIR}
     ${PROJECT_SOURCE_DIR}/source)

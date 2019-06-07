@@ -169,9 +169,9 @@ FUNCTION(CREATE_LIBRARY)
 
     # parse args
     cmake_parse_arguments(LIB
-        "INSTALL"                               # options
-        "TARGET_NAME;OUTPUT_NAME;TYPE;PREFIX"   # single value args
-        "${multival_args}"                      # multiple value args
+        "INSTALL"                                                   # options
+        "TARGET_NAME;OUTPUT_NAME;TYPE;PREFIX;COMPILE_DEFINITIONS"   # single value args
+        "${multival_args}"                                          # multiple value args
         ${ARGN})
 
     # defaults
@@ -205,8 +205,10 @@ FUNCTION(CREATE_LIBRARY)
     target_link_libraries(${LIB_TARGET_NAME}
         ${LIB_LINK_LIBRARIES})
 
+    target_compile_definitions(${LIB_TARGET_NAME} PUBLIC ${LIB_COMPILE_DEFINITIONS})
+
     # include dirs
-    target_include_directories(${LIB_TARGET_NAME} INTERFACE
+    target_include_directories(${LIB_TARGET_NAME} PUBLIC
         $<BUILD_INTERFACE:${LIB_INCLUDE_DIRECTORIES}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
 
@@ -412,7 +414,7 @@ FUNCTION(CHECKOUT_GIT_SUBMODULE)
         message(STATUS "${MSG}")
         execute_process(
             COMMAND
-                ${GIT_EXECUTABLE} submodule update ${_RECURSE} ${CHECKOUT_RELATIVE_PATH}
+                ${GIT_EXECUTABLE} submodule update ${_RECURSE} ${CHECKOUT_ADDITIONAL_CMDS} ${CHECKOUT_RELATIVE_PATH}
             WORKING_DIRECTORY
                 ${CHECKOUT_WORKING_DIRECTORY})
     endif()
